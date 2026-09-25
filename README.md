@@ -6,16 +6,6 @@
 
 A calorie/macro/spending tracker where you're allowed to be kinda sloppy and casual about it. Use text or audio to log food in the Code project on any device, plus add photographs of receipts, meals, and nutrition labels.
 
-## Before you start: create YOUR OWN private repo from this template
-
-DO NOT log real data into this repo. Treat this template as read-only source material.
-
-**DO NOT click GitHub's "Fork" button.** A fork of a public repo is public by default, and GitHub doesn't offer a free way to make a private fork - confirmed directly against GitHub's own API, which refuses to change that setting on anything but an org-owned private repo. Use the green **"Use this template"** button instead (a different button, further along the same row) or the equivalent steps below. Unlike a fork, it creates a completely separate repo with no shared git history and no relation to this one, and lets you choose Private right when you create it.
-
-## Structure and onboarding
-
-"Project For Your Health" is the name of this template. THIS IS NOT YOUR TRACKER, it's just a template. Onboarding (see Setup below) gives your instance its own name instead, in the style "Project 200" or "Project Lose 30," based on your actual goal, and renames CLAUDE.md's title and the workbook file to match. This template file's title stays "Project For Your Health" either way.
-
 ## Requirements
 
 - **Git**, and a GitHub account (or any git host that offers private repos).
@@ -24,24 +14,48 @@ DO NOT log real data into this repo. Treat this template as read-only source mat
 - **LibreOffice**, free, any recent version. Needed for the workbook's formulas to actually recalculate. `openpyxl` (the Python library this project uses to read and write the .xlsx file) has no formula engine of its own, it only stores whatever value was last calculated. Without LibreOffice installed, `app/recompute.py` still updates the raw data, it just skips recalculating and says so.
 - Recommended: **GitHub CLI (`gh`)**, installed and logged in (`gh auth login`). Without this, the privacy checks below still run, but they can only warn instead of actually confirming or blocking anything.
 
+## Before you start: create YOUR OWN private repo from this template
 
-### Exact steps to get your own private copy
+DO NOT log real data into this repo. Treat this template as read-only source material.
 
-**Recommended: the GitHub CLI, one command.** This is GitHub's own "generate from template" feature, not a fork - it gives you a fresh repo with a single initial commit, no shared history, and no relation to this one:
-```
-gh repo create my-tracker --private --template paulmatthis/project-for-your-health --clone
-cd my-tracker
-```
-Skip to step 4 (verify) below.
+**DO NOT click GitHub's "Fork" button.** A fork of a public repo is public by default, and GitHub doesn't offer a free way to make a private fork - confirmed directly against GitHub's own API, which refuses to change that setting on anything but an org-owned private repo. This repo is set up as a GitHub **Template repository** instead, specifically so there's a correct button to click: **"Use this template,"** a separate green button on the same row as Fork. It creates a completely separate repo with a single fresh commit, no shared git history, and no relation to this one, and lets you choose Private right when you create it. Use the exact steps below, which walk through that button (or its command-line equivalent).
 
-**Or, the same thing from the GitHub web UI:** on this repo's page, click the green **"Use this template"** button (not "Fork," a separate button further along the same row), then **"Create a new repository."** Choose an owner, a name, and confirm the visibility is set to **Private** right there on that page, before clicking Create. Then clone it:
-```
-git clone <the-URL-github-gives-you> my-tracker
-cd my-tracker
-```
-Skip to step 4.
+### Get your own copy
 
-**Or, without GitHub's template feature** (any git host, not just GitHub):
+1. **Create your private repo from this template.** Either:
+   - **Command line** (needs `gh`, see Requirements above):
+     ```
+     gh repo create my-tracker --private --template paulmatthis/project-for-your-health --clone
+     cd my-tracker
+     ```
+   - **Or the GitHub web UI:** on this repo's page, click the green **"Use this template"** button, then **"Create a new repository."** Choose an owner and a name, and confirm the visibility is set to **Private** right there on that page, before clicking Create. Then clone it:
+     ```
+     git clone <the-URL-github-gives-you> my-tracker
+     cd my-tracker
+     ```
+
+   Not using GitHub, or want to do this without the template feature? See "Not using GitHub" below instead, then come back to step 2.
+
+2. **Verify it's actually private. Don't just trust the toggle you clicked.**
+   ```
+   gh repo view --json isPrivate
+   ```
+   This should print `{"isPrivate":true}`. On github.com, the repo name should show a **Private** badge next to it. If either check says public, fix it immediately, before going any further:
+   ```
+   gh repo edit --visibility private --accept-visibility-change-consequences
+   ```
+
+3. **Turn on the pre-push safety check**, one time, right now, before you log anything real:
+   ```
+   git config core.hooksPath .githooks
+   ```
+   This makes every future `git push` from this clone refuse to go through if this repo is ever public, checked fresh against GitHub each time rather than just trusted from setup. See `.githooks/pre-push` for exactly what it checks and its honest limits, it's a backstop, not a substitute for step 2.
+
+4. **Only now, open this folder in Claude Code and start onboarding** (see Setup below).
+
+### Not using GitHub
+
+If your git host isn't GitHub, or you'd rather not use the template feature, do the same thing by hand:
 
 1. Clone this template:
    ```
@@ -56,41 +70,26 @@ Skip to step 4.
    git commit -m "Initial commit from Project For Your Health template"
    git branch -M main
    ```
-3. Create a **new, private** repo of your own. Either:
-   - With the GitHub CLI (`gh`), which won't let you skip the privacy flag by accident:
-     ```
-     gh repo create my-tracker --private --source=. --remote=origin --push
-     ```
-   - Or on github.com: click **New repository**, name it, and *before clicking Create*, confirm the visibility toggle says **Private**, not Public. Then:
-     ```
-     git remote add origin <the-URL-github-gives-you>
-     git push -u origin main
-     ```
+3. Create a **new, private** repo of your own on whatever host you're using, then:
+   ```
+   git remote add origin <your-new-private-repo-url>
+   git push -u origin main
+   ```
 
-4. **Verify it's actually private. Don't just trust the toggle you clicked.**
-   ```
-   gh repo view --json isPrivate
-   ```
-   This should print `{"isPrivate":true}`. On github.com, the repo name should show a **Private** badge next to it. If either check says public, fix it immediately, before going any further:
-   ```
-   gh repo edit --visibility private --accept-visibility-change-consequences
-   ```
-5. Turn on the pre-push safety check (one time, right now, before you log anything real):
-   ```
-   git config core.hooksPath .githooks
-   ```
-   This makes every future `git push` from this clone refuse to go through if this repo is ever public, checked fresh against GitHub each time rather than just trusted from setup. See `.githooks/pre-push` for exactly what it checks and its honest limits, it's a backstop, not a substitute for step 4.
-
-Only after all five steps: open this folder in Claude Code and start onboarding (see Setup below).
+Then continue from step 2 (verify) above.
 
 ### Preventing leaks
 
 No process is perfect, but the following layers exist to try and protect your private information:
 
 - **`.claude/hooks/session-start.sh`** checks the repo's real GitHub visibility at the start of every Claude Code session on this project and warns loudly if it isn't private. Only fires inside a Claude Code session.
-- **`.githooks/pre-push`** (step 5 above) checks the same thing before any `git push`, from any terminal, Claude Code or not - this is the one that actually matters, since a push is the step that can't be undone. Fails open (warns, doesn't block) if `gh` isn't installed or isn't logged in, and can be skipped with `git push --no-verify` - no git hook is truly unbypassable. This raises the bar against an honest mistake, it doesn't remove the possibility of a deliberate override.
+- **`.githooks/pre-push`** (step 3 above) checks the same thing before any `git push`, from any terminal, Claude Code or not - this is the one that actually matters, since a push is the step that can't be undone. Fails open (warns, doesn't block) if `gh` isn't installed or isn't logged in, and can be skipped with `git push --no-verify` - no git hook is truly unbypassable. This raises the bar against an honest mistake, it doesn't remove the possibility of a deliberate override.
 - **`statements/*.pdf`** (raw bank/card statement uploads) and the LibreOffice recalculation step's temp files are gitignored, never committed even to a private repo - see `.gitignore`.
 - **None of this catches**: pasting your data somewhere unrelated and public by hand, sharing your private repo's access with someone you shouldn't, or deliberately overriding the checks above with `--no-verify`. Those are on you, the same as with any private notebook you could still choose to leave open on a table.
+
+## Structure and onboarding
+
+"Project For Your Health" is the name of this template. THIS IS NOT YOUR TRACKER, it's just a template. Onboarding (see Setup below) gives your instance its own name instead, in the style "Project 200" or "Project Lose 30," based on your actual goal, and renames CLAUDE.md's title and the workbook file to match. This template file's title stays "Project For Your Health" either way.
 
 ## It's yours now
 
