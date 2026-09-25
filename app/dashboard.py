@@ -19,7 +19,22 @@ from effective_date import effective_date
 from themes import THEME_LABELS, THEMES, random_theme_name
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-WORKBOOK = PROJECT_ROOT / "project-200-tracker.xlsx"
+
+
+def _find_workbook() -> Path:
+    """The one .xlsx file at the project root, discovered by extension
+    rather than a hardcoded name - same approach the bash hooks already
+    use (see .claude/hooks/session-start.sh), so this keeps working
+    after onboarding renames the workbook (CLAUDE.md's FIRST RUN /
+    ONBOARDING step 1) instead of silently pointing at a file that no
+    longer exists."""
+    matches = sorted(PROJECT_ROOT.glob("*.xlsx"))
+    if not matches:
+        raise FileNotFoundError(f"No .xlsx workbook found in {PROJECT_ROOT}")
+    return matches[0]
+
+
+WORKBOOK = _find_workbook()
 
 MEAL_RE = re.compile(r"(breakfast|lunch|dinner|snack)", re.IGNORECASE)
 # Strips a leading "Dinner:" / "Standard breakfast 1:" style label off an

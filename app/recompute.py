@@ -20,8 +20,23 @@ import openpyxl
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FOOD_LOG = PROJECT_ROOT / "food-log.md"
-WORKBOOK = PROJECT_ROOT / "project-200-tracker.xlsx"
 SHEET_NAME = "Food Log"
+
+
+def _find_workbook() -> Path:
+    """The one .xlsx file at the project root, discovered by extension
+    rather than a hardcoded name - same approach the bash hooks already
+    use (see .claude/hooks/session-start.sh), so this keeps working
+    after onboarding renames the workbook (CLAUDE.md's FIRST RUN /
+    ONBOARDING step 1) instead of silently pointing at a file that no
+    longer exists."""
+    matches = sorted(PROJECT_ROOT.glob("*.xlsx"))
+    if not matches:
+        raise FileNotFoundError(f"No .xlsx workbook found in {PROJECT_ROOT}")
+    return matches[0]
+
+
+WORKBOOK = _find_workbook()
 
 ROW_RE = re.compile(
     r"^\|\s*(\d{4}-\d{2}-\d{2})\s*\|(.*)\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|"
@@ -166,30 +181,101 @@ def sync_daily_summary_dates(rows, dry_run=False):
     return True
 
 
+EXCEL_ERROR_STRINGS = ("#VALUE!", "#DIV/0!", "#REF!", "#NAME?", "#NULL!", "#NUM!", "#N/A")
+
+
+def _find_soffice() -> str | None:
+    """Cross-platform search for the LibreOffice binary: PATH first
+    (covers a Linux package install, or anyone who put it on PATH
+    themselves), then each OS's default install location. Deliberately
+    self-contained - no dependency on any Claude-specific bundled
+    tooling, so this works the same whether or not Claude Desktop
+    happens to be installed on this machine."""
+    import platform
+    import shutil
+
+    found = shutil.which("soffice") or shutil.which("libreoffice")
+    if found:
+        return found
+
+    system = platform.system()
+    if system == "Darwin":
+        candidates = ["/Applications/LibreOffice.app/Contents/MacOS/soffice"]
+    elif system == "Windows":
+        candidates = [
+            r"C:\Program Files\LibreOffice\program\soffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        ]
+    else:
+        candidates = ["/usr/bin/soffice", "/usr/local/bin/soffice", "/opt/libreoffice/program/soffice"]
+
+    for candidate in candidates:
+        if Path(candidate).exists():
+            return candidate
+    return None
+
+
 def recalc():
-    import glob
-    import os
+    """openpyxl has no formula engine - it only reads and writes each
+    cell's last-cached value, so without this step nothing here would
+    ever actually recalculate. Forces LibreOffice to open the workbook
+    headless, recalculate it (the default behavior of --convert-to,
+    since AutoCalculate is on by default), and hand back a fresh copy,
+    which replaces the original in place."""
+    import shutil
+    import tempfile
 
-    env = os.environ.copy()
-    env["PATH"] = "/Applications/LibreOffice.app/Contents/MacOS:" + env.get("PATH", "")
-
-    candidates = glob.glob(
-        str(Path.home() / "Library/Application Support/Claude/**/skills/xlsx/scripts/recalc.py"),
-        recursive=True,
-    )
-    if not candidates:
-        print("Could not locate the xlsx skill's recalc.py; skipping recalculation.", file=sys.stderr)
+    soffice = _find_soffice()
+    if not soffice:
+        print(
+            "Could not find a LibreOffice (soffice) binary on PATH or in the "
+            "usual per-OS install locations. Install LibreOffice to get "
+            "automatic formula recalculation - see README.md. Skipping "
+            "recalculation for now; the workbook's formulas will show stale "
+            "cached values until it's opened and recalculated by hand.",
+            file=sys.stderr,
+        )
         return None
-    result = subprocess.run(
-        [sys.executable, candidates[0], str(WORKBOOK), "90"],
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    print(result.stdout.strip())
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-    return result
+
+    with tempfile.TemporaryDirectory() as outdir:
+        result = subprocess.run(
+            [soffice, "--headless", "--norestore", "--convert-to", "xlsx", "--outdir", outdir, str(WORKBOOK)],
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+        if result.returncode != 0:
+            print(f"LibreOffice failed to recalculate: {result.stderr.strip()}", file=sys.stderr)
+            return result
+
+        converted = Path(outdir) / WORKBOOK.name
+        if not converted.exists():
+            print(
+                "LibreOffice exited cleanly but produced no output file, so nothing "
+                "was recalculated. Check that no other LibreOffice instance is "
+                "running, then retry.",
+                file=sys.stderr,
+            )
+            return result
+
+        shutil.copyfile(converted, WORKBOOK)
+
+    errors = []
+    wb = openpyxl.load_workbook(WORKBOOK, data_only=True)
+    for sheet_name in wb.sheetnames:
+        for row in wb[sheet_name].iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str) and cell.value in EXCEL_ERROR_STRINGS:
+                    errors.append(f"{sheet_name}!{cell.coordinate}: {cell.value}")
+    wb.close()
+
+    if errors:
+        print(f"Recalculated with {len(errors)} formula error(s):", file=sys.stderr)
+        for e in errors[:20]:
+            print(f"  {e}", file=sys.stderr)
+    else:
+        print("Recalculated, no formula errors found.")
+    return {"status": "errors_found" if errors else "success", "total_errors": len(errors)}
 
 
 def git_commit_and_push(message: str):
