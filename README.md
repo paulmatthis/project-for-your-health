@@ -6,37 +6,32 @@
 
 A calorie/macro/spending tracker where you're allowed to be kinda sloppy and casual about it. Use text or audio to log food in the Code project on any device, plus add photographs of receipts, meals, and nutrition labels.
 
+DO NOT log real data into this repo. This is a template.
+
 ## Requirements
 
-- **Git**, and a GitHub account (or any git host that offers private repos).
-- **Python 3.9+**, with `pip install -r requirements.txt` run once after cloning (installs `openpyxl`, used to read and write the workbook).
-- **A Chromium-based browser**: Google Chrome, Brave, Microsoft Edge, or Chromium. The on-demand dashboard opens in an isolated app-mode window (`--app` / `--user-data-dir`), a feature all four share; the launcher scripts try each in that order. Firefox and Safari don't support this mode and aren't detected.
-- **LibreOffice**, free, any recent version. Needed for the workbook's formulas to actually recalculate. `openpyxl` (the Python library this project uses to read and write the .xlsx file) has no formula engine of its own, it only stores whatever value was last calculated. Without LibreOffice installed, `app/recompute.py` still updates the raw data, it just skips recalculating and says so.
-- Recommended: **GitHub CLI (`gh`)**, installed and logged in (`gh auth login`). Without this, the privacy checks below still run, but they can only warn instead of actually confirming or blocking anything.
+- **Python 3.9+**, with `pip install -r requirements.txt` run once after cloning. Installs `openpyxl` to read and write the workbook.
+- **LibreOffice**. Needed for the workbook's formulas. `openpyxl` Without this, `app/recompute.py` still updates the raw data but skips recalculation.
+- **A Chromium-based browser**: Google Chrome, Brave, Microsoft Edge, or Chromium to open Dashboard. Launcher scripts try each in that order. 
+- **GitHub CLI (`gh`)**
 
-## Before you start: create YOUR OWN private repo from this template
+### Create private repo from this template
 
-DO NOT log real data into this repo. Treat this template as read-only source material.
-
-**DO NOT click GitHub's "Fork" button.** A fork of a public repo is public by default, and GitHub doesn't offer a free way to make a private fork - confirmed directly against GitHub's own API, which refuses to change that setting on anything but an org-owned private repo. This repo is set up as a GitHub **Template repository** instead, specifically so there's a correct button to click: **"Use this template,"** a separate green button on the same row as Fork. It creates a completely separate repo with a single fresh commit, no shared git history, and no relation to this one, and lets you choose Private right when you create it. Use the exact steps below, which walk through that button (or its command-line equivalent).
-
-### Get your own copy
-
-1. **Create your private repo from this template.** Either:
-   - **Command line** (needs `gh`, see Requirements above):
+1. **Create a private repo via Command Line or Web UI** 
+   - **Command line**
      ```
      gh repo create my-tracker --private --template paulmatthis/project-for-your-health --clone
      cd my-tracker
      ```
-   - **Or the GitHub web UI:** on this repo's page, click the green **"Use this template"** button, then **"Create a new repository."** Choose an owner and a name, and confirm the visibility is set to **Private** right there on that page, before clicking Create. Then clone it:
+   - **GitHub Web UI**. On this repo's page, click the green **"Use this template"** button, then **"Create a new repository."** Choose an owner and a name, and confirm the visibility is set to **Private**, then click Create. Then clone it:
      ```
      git clone <the-URL-github-gives-you> my-tracker
      cd my-tracker
      ```
 
-   Not using GitHub, or want to do this without the template feature? See "Not using GitHub" below instead, then come back to step 2.
+   See "Not using GitHub" below for non-github options, then come back to step 2.
 
-2. **Verify it's actually private. Don't just trust the toggle you clicked.**
+2. **Verify it's private.**
    ```
    gh repo view --json isPrivate
    ```
@@ -45,13 +40,13 @@ DO NOT log real data into this repo. Treat this template as read-only source mat
    gh repo edit --visibility private --accept-visibility-change-consequences
    ```
 
-3. **Turn on the pre-push safety check**, one time, right now, before you log anything real:
+3. **Turn on the pre-push safety check** before you log anything:
    ```
    git config core.hooksPath .githooks
    ```
-   This makes every future `git push` from this clone refuse to go through if this repo is ever public, checked fresh against GitHub each time rather than just trusted from setup. See `.githooks/pre-push` for exactly what it checks and its honest limits, it's a backstop, not a substitute for step 2.
+   This makes every future `git push` from this clone refuse to go through if this repo is public. See `.githooks/pre-push` for details.
 
-4. **Only now, open this folder in Claude Code and start onboarding** (see Setup below).
+4. **Open this folder as a project in Claude Code to begin the onboarding process.** 
 
 ### Not using GitHub
 
@@ -62,7 +57,7 @@ If your git host isn't GitHub, or you'd rather not use the template feature, do 
    git clone https://github.com/paulmatthis/project-for-your-health.git my-tracker
    cd my-tracker
    ```
-2. Disconnect it from this template's history and remote entirely, so there's no path back to a public repo, ever:
+2. Disconnect it from this template's history and remote entirely, so there's no path back to a public repo:
    ```
    rm -rf .git
    git init
@@ -83,23 +78,23 @@ Then continue from step 2 (verify) above.
 No process is perfect, but the following layers exist to try and protect your private information:
 
 - **`.claude/hooks/session-start.sh`** checks the repo's real GitHub visibility at the start of every Claude Code session on this project and warns loudly if it isn't private. Only fires inside a Claude Code session.
-- **`.githooks/pre-push`** (step 3 above) checks the same thing before any `git push`, from any terminal, Claude Code or not - this is the one that actually matters, since a push is the step that can't be undone. Fails open (warns, doesn't block) if `gh` isn't installed or isn't logged in, and can be skipped with `git push --no-verify` - no git hook is truly unbypassable. This raises the bar against an honest mistake, it doesn't remove the possibility of a deliberate override.
-- **`statements/*.pdf`** (raw bank/card statement uploads) and the LibreOffice recalculation step's temp files are gitignored, never committed even to a private repo - see `.gitignore`.
-- **None of this catches**: pasting your data somewhere unrelated and public by hand, sharing your private repo's access with someone you shouldn't, or deliberately overriding the checks above with `--no-verify`. Those are on you, the same as with any private notebook you could still choose to leave open on a table.
+- **`.githooks/pre-push`** (step 3 above) checks the same thing before any `git push`. This one's most important, since a push is the step that can't be undone. Fails open if `gh` isn't installed or isn't logged in, and can be skipped with `git push --no-verify`. 
+- **`statements/*.pdf`** (raw bank/card statement uploads) and the LibreOffice recalculation step's temp files are gitignored. See `.gitignore` for details.
+- Never paste your data somewhere public by hand, share your private repo's access with someone you shouldn't, or deliberately override the checks above with `--no-verify`. This template cannot account for everything. Just be safe.
 
 ## Structure and onboarding
 
-"Project For Your Health" is the name of this template. THIS IS NOT YOUR TRACKER, it's just a template. Onboarding (see Setup below) gives your instance its own name instead, in the style "Project 200" or "Project Lose 30," based on your actual goal, and renames CLAUDE.md's title and the workbook file to match. This template file's title stays "Project For Your Health" either way.
+"Project For Your Health" is the name of this template. THIS IS NOT YOUR TRACKER, it's just a template. Onboarding renames your instance, in the style "Project 200" or "Project Lose 30," based on your actual goal, and renames CLAUDE.md's title and the workbook file to match. This template file's title stays "Project For Your Health" either way.
 
 ## It's yours now
 
-Once you've made your own private repo from this template, everything in it is yours to change. Ask Claude Code to rewrite the onboarding questions, change the tone, add a feature, redesign the dashboard, swap the calorie formula, rename things, delete what you don't want, whatever you want. This template's own conventions (the hooks, the file layout, the TONE section in CLAUDE.md) are a reasonable starting point, not rules you're bound to. The only genuinely load-bearing pieces are the git sync hooks and the privacy checks above, and even those can be changed if you understand what you'd be giving up.
+Once you've made your own private repo from this template, everything in it is yours to change. Ask Claude Code to add more onboarding, change the tone, add a feature, redesign the dashboard, swap the calorie formula, rename things, delete what you don't want, whatever. This template's own conventions (the hooks, the file layout, the TONE section in CLAUDE.md) are just a reasonable starting point. The only genuinely load-bearing pieces are the git sync hooks, the .py calculator, and the privacy checks above, and even those can be changed if you want to tinker.
 
 ## Setup
 
-1. **Open this folder in Claude Code** (desktop app, command-line tool, or a cloud session pointed at the repo) - only after your own private repo is set up per the steps above. On the first message, Claude notices `profile-and-targets.md` says "ONBOARDING NOT COMPLETE" and walks through setup: picks a project name with you based on your actual goal and renames itself to match, asks a handful of questions (stats, goal, history, preferences, activity, which optional features you want), then calculates your targets and saves everything. Opt-out behaviors go in an archive folder, so you can resurrect them if you change your mind later.
+1. **Open this folder in a Claude Code project** after your own private repo is set up per installation steps. On the first message, Claude notices `profile-and-targets.md` says "ONBOARDING NOT COMPLETE" and walks through setup: picks a project name with you based on your actual goal and renames itself to match, asks a handful of questions (stats, goal, history, preferences, activity, which optional features you want to enable), then calculates your targets and saves everything. Opt-out behaviors go in an archive folder, so you can resurrect them later if you change your mind.
 
-2. **After that, just send stuff.** A photo of a nutrition label, a text like "had two eggs and toast," a receipt from the grocery store, a screenshot or copy/paste of what you spent on a given night. Make sure you're always in the same Claude Code project, otherwise you'll need to manually copy over what you logged.
+2. **After that, just send stuff.** A photo of a nutrition label, a text like "had two eggs and toast," a receipt from the grocery store, a screenshot or copy/paste of what you spent on a given night. Make sure you're always in the same Claude Code project, otherwise you'll need to manually copy over what you logged. When you send data from other devices besides your primary one (a mobile sesssion, say) the spreadsheet will not update until you log back in on your primary device. Open the dashboard and any updates will then be logged synced against the local files and repo. 
 
 ## Optional behaviors
 
@@ -111,36 +106,31 @@ These are initially determined at onboarding, but you can turn them on or off at
 
 Turning a feature off moves its files to `archive/`. Turning it back on later just moves it back.
 
-The companion spreadsheet (`tracker.xlsx`, see below) isn't on this list. It's included by default, same as the food log itself, not something you opt into.
-
 ## Updating from mobile or other machines
 
-You never run git yourself. A hook pulls the latest logs at the start of every session, and another commits and pushes anything new at the end, retrying automatically if two devices sync at the same moment. Two devices logging around the same time get their entries combined automatically in the text logs, instead of a merge conflict. The one exception is the workbook, a binary file, so it can't merge the same way, see below for how that's handled instead.
+A hook pulls the latest logs at the start of every session, and another commits and pushes anything new if you tell Claude Code to end the session, retrying automatically if two devices sync at the same moment. Two devices logging around the same time get their entries combined automatically in the text logs to avoid a merge conflict. The workbook is a binary `.xlsx` file, so it can't merge the same way, see below for how that's handled instead.
 
 ## The on-demand dashboard
 
-Double-click the launcher for your platform in the project root: `Open Dashboard (Mac).command`, `Open Dashboard (Windows).bat`, or `Open Dashboard (Linux).desktop` (the Linux one needs a one-time path edit after cloning, see the comments inside it). It syncs the workbook, starts a local server for just this session, opens the dashboard in its own isolated browser window (so it never touches your regular browser profile), and shuts everything back down the moment you close that window. Nothing runs in the background before or after. Only the Mac path has actually been tested; the Windows and Linux ones were written and reviewed but not run on those platforms, see CLAUDE.md's app/ section for specifics.
+Double-click the launcher for your platform in the project root: `Open Dashboard (Mac).command`, `Open Dashboard (Windows).bat`, or `Open Dashboard (Linux).desktop` (the Linux one needs a one-time path edit after cloning, see the comments inside it). It syncs the workbook, starts a local server, and opens the dashboard in its own isolated browser window so it never touches your regular browser profile). 
+
+NOTE: Only the Mac path has actually been tested; the Windows and Linux ones were written and reviewed but not run on those platforms, see CLAUDE.md's app/ section for details.
 
 ### Launching it by hand
 
-If the launcher for your platform doesn't work, especially likely on Windows or Linux since only the Mac path has actually been run, do the same steps yourself from a terminal:
+If the launcher for your platform doesn't work, you can probably ask Claude Code to troubleshoot and fix it for you in the same project. You can also do the same steps yourself from a CLI:
 
 1. From the project root, sync the workbook first: `python3 app/recompute.py` (Windows: `python app/recompute.py`, or `py app/recompute.py` if `python` isn't found).
 2. Start the server: `python3 app/server.py` (same `python`/`py` swap on Windows). Leave this terminal window open, it runs in the foreground until you stop it.
 3. Open `http://localhost:8420/` in any browser. It doesn't need to be Chromium-based for this manual path, that requirement is only for the isolated app-mode window the launcher scripts try to open automatically - a normal browser tab works fine too, it just looks like a regular web page instead of its own little app window.
-4. When you're done, go back to that terminal window and press Ctrl+C to stop the server.
 
 If port 8420 is already in use (usually a leftover server from a launcher that didn't clean up), find and stop it before starting a new one:
 - Mac/Linux: `lsof -ti:8420` to get the process ID, then `kill <that number>`.
 - Windows (PowerShell): `Get-NetTCPConnection -LocalPort 8420 | Select-Object OwningProcess`, then `Stop-Process -Id <that number>`.
 
-If Claude Code is running in the same project, you can also just ask it to launch or troubleshoot the dashboard for you instead of doing any of this by hand.
-
 ## About the companion workbook
 
-`tracker.xlsx` is a live spreadsheet mirror of the logs used by Claude, with tabs that auto-calculate daily and weekly summaries against your targets. It only ever gets edited from your primary device (whichever one you run Claude Code from most, for example a home computer). A phone/cloud session logs to the markdown files only. 
-
-Your primary device backfills the matching rows next time you run a session on it. This is because it's a binary file, and two devices editing it around the same time can't be merged the way the text logs can. See the workbook's own README tab for its tab structure and color key.
+`tracker.xlsx` is the generic name for a live spreadsheet mirror of the logs used by Claude, with tabs that auto-calculate daily, weekly, and monthly summaries against your targets. It only ever gets edited from your primary device (whichever one you run Claude Code from most, for example a home computer). A phone/cloud session logs to the markdown files only. You have the option to set up an always-on remote instance if you want, just ask Claude Code how to do that. I didn't do it here because it felt like major overkill. 
 
 ## Project map
 
