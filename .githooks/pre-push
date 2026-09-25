@@ -1,0 +1,102 @@
+#!/bin/bash
+# Refuses to push if the repo being pushed to is public on GitHub.
+#
+# This is a second, independent line of defense against accidentally
+# exposing personal data (food photos, spending, health stats).
+# .claude/hooks/session-start.sh already checks this and warns loudly,
+# but only inside a Claude Code session. This hook catches the same
+# problem for any `git push`, from any terminal, Claude Code or not -
+# the moment that actually matters, since a push is the step that can't
+# be undone once GitHub, forks, or search engines have seen it.
+#
+# ENABLE THIS AFTER CLONING (one time):
+#   git config core.hooksPath .githooks
+# Git does not run hooks from a tracked directory on its own - this is
+# the standard way to opt a clone into a repo's own hook scripts. See
+# README.md's setup instructions.
+#
+# HONEST LIMITS, read before relying on this:
+#   - Only checks what `gh` can see. If `gh` isn't installed or isn't
+#     logged in, this FAILS OPEN: it warns loudly but allows the push,
+#     rather than blocking every push over a missing tool. Install and
+#     authenticate `gh` (gh auth login) to get the real guarantee.
+#   - It checks the target repo's visibility, not the contents of what
+#     you're pushing. It stops "I forgot to make this private," not
+#     "I put something sensitive in a commit to an already-private repo."
+#   - `git push --no-verify` skips every hook, including this one, by
+#     design. No git hook is truly unbypassable - this raises the bar
+#     against an honest mistake, it does not remove the possibility of
+#     a deliberate override.
+
+REMOTE_URL="$2"
+
+if ! command -v gh >/dev/null 2>&1; then
+  cat >&2 <<'EOF'
+
+################################################################################
+# WARNING: could not check this repo's GitHub visibility (gh CLI not found).
+# Pushing anyway - but confirm BY HAND, right now, that this repo is PRIVATE
+# on GitHub before it holds any real data:
+#   GitHub -> your repo -> Settings -> Danger Zone -> Change repository visibility
+################################################################################
+
+EOF
+  exit 0
+fi
+
+if ! gh auth status >/dev/null 2>&1; then
+  cat >&2 <<'EOF'
+
+################################################################################
+# WARNING: could not check this repo's GitHub visibility (gh is not logged in
+# - run `gh auth login`). Pushing anyway - but confirm BY HAND, right now,
+# that this repo is PRIVATE on GitHub before it holds any real data.
+################################################################################
+
+EOF
+  exit 0
+fi
+
+if [ -n "$REMOTE_URL" ]; then
+  IS_PRIVATE=$(gh repo view "$REMOTE_URL" --json isPrivate --jq '.isPrivate' 2>/dev/null)
+else
+  IS_PRIVATE=$(gh repo view --json isPrivate --jq '.isPrivate' 2>/dev/null)
+fi
+
+if [ -z "$IS_PRIVATE" ]; then
+  cat >&2 <<'EOF'
+
+################################################################################
+# WARNING: could not read this repo's visibility from GitHub (offline, or
+# this isn't a GitHub repo `gh` can see). Pushing anyway - but confirm BY
+# HAND that this repo is PRIVATE before it holds any real data.
+################################################################################
+
+EOF
+  exit 0
+fi
+
+if [ "$IS_PRIVATE" != "true" ]; then
+  cat >&2 <<'EOF'
+
+################################################################################
+# PUSH BLOCKED: this repo is PUBLIC on GitHub.
+#
+# This project can end up holding food photos, spending data, and possibly
+# bank/card statement images - never meant to be public. Make it private,
+# then push again:
+#
+#   gh repo edit --visibility private --accept-visibility-change-consequences
+#
+# or from the web: your repo -> Settings -> Danger Zone -> Change visibility.
+#
+# If this push is deliberately going to a public repo (for example,
+# contributing back to the template itself, not your own private tracker),
+# use: git push --no-verify
+################################################################################
+
+EOF
+  exit 1
+fi
+
+exit 0

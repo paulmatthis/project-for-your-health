@@ -47,13 +47,19 @@ if (-not $portInUse) {
 $profileDir = Join-Path $env:TEMP ("dashboard-chrome-" + [System.Guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $profileDir | Out-Null
 
-# Common Chrome install locations. Edit this list if yours is somewhere
-# else - there's no single canonical path on Windows the way `open -a`
-# resolves an app by name on macOS.
+# Any Chromium-based browser understands --app and --user-data-dir, not
+# just Chrome. Common install locations for each, in order - edit this
+# list if yours installs somewhere else. There's no single canonical
+# path on Windows the way `open -a` resolves an app by name on macOS.
 $chromeCandidates = @(
     (Join-Path $env:ProgramFiles "Google\Chrome\Application\chrome.exe"),
     (Join-Path ${env:ProgramFiles(x86)} "Google\Chrome\Application\chrome.exe"),
-    (Join-Path $env:LocalAppData "Google\Chrome\Application\chrome.exe")
+    (Join-Path $env:LocalAppData "Google\Chrome\Application\chrome.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "Microsoft\Edge\Application\msedge.exe"),
+    (Join-Path $env:ProgramFiles "Microsoft\Edge\Application\msedge.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "BraveSoftware\Brave-Browser\Application\brave.exe"),
+    (Join-Path $env:LocalAppData "BraveSoftware\Brave-Browser\Application\brave.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "Chromium\Application\chrome.exe")
 )
 $chrome = $chromeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $chrome) {
@@ -61,7 +67,7 @@ if (-not $chrome) {
     if ($startedServer -and $serverProcess) {
         Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
     }
-    Write-Error "Could not find chrome.exe in the usual install locations. Edit `$chromeCandidates in app/open_dashboard.ps1 if Chrome is installed somewhere else."
+    Write-Error "Could not find Chrome, Edge, Brave, or Chromium in the usual install locations. Edit `$chromeCandidates in app/open_dashboard.ps1 if yours is installed somewhere else."
     exit 1
 }
 

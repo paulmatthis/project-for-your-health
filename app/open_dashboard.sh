@@ -38,7 +38,23 @@ PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dashboard-chrome.XXXXXXXX")"
 
 UNAME=$(uname -s)
 if [ "$UNAME" = "Darwin" ]; then
-  open -n -a "Google Chrome" --args \
+  # Any Chromium-based browser understands --app and --user-data-dir, not
+  # just Chrome. Checks each app bundle's usual install location in
+  # order rather than trying to launch-and-see, since `open -a` on a
+  # missing app can pop a "can't find app in App Store" dialog instead
+  # of just failing quietly.
+  BROWSER_APP=""
+  for candidate in "Google Chrome" "Brave Browser" "Microsoft Edge" "Chromium"; do
+    if [ -d "/Applications/$candidate.app" ] || [ -d "$HOME/Applications/$candidate.app" ]; then
+      BROWSER_APP="$candidate"
+      break
+    fi
+  done
+  if [ -z "$BROWSER_APP" ]; then
+    echo "Could not find Chrome, Brave, Edge, or Chromium installed. Install one of these (or edit the candidate list in app/open_dashboard.sh if you use something else Chromium-based)." >&2
+    exit 1
+  fi
+  open -n -a "$BROWSER_APP" --args \
     --app="http://localhost:8420/" \
     --user-data-dir="$PROFILE_DIR"
 else
@@ -46,14 +62,14 @@ else
   # binary directly. Tries the common names in order; edit this list if
   # yours installs under something else.
   CHROME_BIN=""
-  for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+  for candidate in google-chrome google-chrome-stable chromium chromium-browser brave-browser microsoft-edge microsoft-edge-stable; do
     if command -v "$candidate" >/dev/null 2>&1; then
       CHROME_BIN="$candidate"
       break
     fi
   done
   if [ -z "$CHROME_BIN" ]; then
-    echo "Could not find a Chrome/Chromium binary on PATH (tried google-chrome, google-chrome-stable, chromium, chromium-browser). Install one of these, or edit the candidate list in app/open_dashboard.sh." >&2
+    echo "Could not find a Chromium-based browser on PATH (tried google-chrome, google-chrome-stable, chromium, chromium-browser, brave-browser, microsoft-edge, microsoft-edge-stable). Install one of these, or edit the candidate list in app/open_dashboard.sh." >&2
     exit 1
   fi
   "$CHROME_BIN" --app="http://localhost:8420/" --user-data-dir="$PROFILE_DIR" &

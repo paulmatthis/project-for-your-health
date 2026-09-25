@@ -220,6 +220,21 @@ FILES
 - welcome-message.md  the message sent at the end of onboarding, see the
                    closing step under FIRST RUN / ONBOARDING. Not otherwise
                    used.
+- requirements.txt  Python dependencies for app/ (openpyxl). Not something
+                   a session installs on its own initiative - the person
+                   running this project handles `pip install -r
+                   requirements.txt` as part of their own setup, see
+                   README.md.
+- .githooks/       a pre-push hook (pre-push) that refuses to push if this
+                   repo is public on GitHub, checked fresh against GitHub
+                   every time, not just trusted from setup. Not active
+                   until the person running this project opts in with
+                   `git config core.hooksPath .githooks` - do this for
+                   them if asked, don't run it unprompted, since it
+                   changes their local git behavior. See README.md's
+                   "Before you start" section for the full privacy setup
+                   this is one layer of, and the hook's own comments for
+                   what it does and does not actually guarantee.
 - images/          archived copy of every photo sent, named
                    YYYY-MM-DD-short-description.jpg, so a reading can be
                    rechecked later without asking for a resend. One
