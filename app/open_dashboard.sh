@@ -11,7 +11,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-# If Finder launched this via Open Dashboard.command, Terminal opens a new
+# If Finder launched this via "Open Dashboard (Mac).command", Terminal opens a new
 # window for it that otherwise just sits there after the script finishes -
 # each double-click leaves another idle window behind. Remember this
 # window's tty (only set when Terminal is actually the launcher) so it can
@@ -32,10 +32,32 @@ if ! lsof -ti:8420 > /dev/null 2>&1; then
   sleep 0.5
 fi
 
-PROFILE_DIR="$(mktemp -d -t dashboard-chrome)"
-open -n -a "Google Chrome" --args \
-  --app="http://localhost:8420/" \
-  --user-data-dir="$PROFILE_DIR"
+# Portable mktemp form (GNU and BSD mktemp interpret a bare -t prefix
+# differently) so this works unchanged on Linux too.
+PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dashboard-chrome.XXXXXXXX")"
+
+UNAME=$(uname -s)
+if [ "$UNAME" = "Darwin" ]; then
+  open -n -a "Google Chrome" --args \
+    --app="http://localhost:8420/" \
+    --user-data-dir="$PROFILE_DIR"
+else
+  # Linux: there's no `open` equivalent, so invoke a Chrome/Chromium
+  # binary directly. Tries the common names in order; edit this list if
+  # yours installs under something else.
+  CHROME_BIN=""
+  for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      CHROME_BIN="$candidate"
+      break
+    fi
+  done
+  if [ -z "$CHROME_BIN" ]; then
+    echo "Could not find a Chrome/Chromium binary on PATH (tried google-chrome, google-chrome-stable, chromium, chromium-browser). Install one of these, or edit the candidate list in app/open_dashboard.sh." >&2
+    exit 1
+  fi
+  "$CHROME_BIN" --app="http://localhost:8420/" --user-data-dir="$PROFILE_DIR" &
+fi
 
 # Wait for this specific (isolated-profile) Chrome window to close before
 # tearing anything down - other Chrome windows are untouched.

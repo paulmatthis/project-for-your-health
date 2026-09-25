@@ -302,13 +302,25 @@ FILES
                    (if Terminal itself launched this script) close its
                    own Terminal window too. Check with `lsof -ti:8420`
                    and `ps aux | grep server.py`, both should come up
-                   empty when no one has the dashboard open. Trigger all
-                   this by double-clicking "Open Dashboard.command" in
-                   the project root - a plain .sh isn't double-clickable
-                   in Finder (opens in a text editor), but macOS runs a
-                   .command file in Terminal on double-click, so that
-                   file just cd's into the project root and calls
-                   app/open_dashboard.sh. If you ever test server.py
+                   empty when no one has the dashboard open. On macOS,
+                   trigger all this by double-clicking "Open Dashboard
+                   (Mac).command" in the project root - a plain .sh
+                   isn't double-clickable in Finder (opens in a text
+                   editor), but macOS runs a .command file in Terminal
+                   on double-click, so that file just cd's into the
+                   project root and calls app/open_dashboard.sh, which
+                   detects Linux vs. macOS itself for how it launches
+                   Chrome. Windows has its own pair, "Open Dashboard
+                   (Windows).bat" and app/open_dashboard.ps1 (PowerShell,
+                   since bash isn't native there), and Linux has "Open
+                   Dashboard (Linux).desktop" (needs a one-time path
+                   edit after cloning, see its own comments - .desktop
+                   files can't reliably locate themselves the way a
+                   .command file can). The Windows and Linux launchers
+                   were written and reviewed but not run on those
+                   platforms - say so plainly if asked and something
+                   doesn't work, don't guess a fix blind. If you ever
+                   test server.py
                    manually outside this script, kill it by PID when
                    done, not `pkill -f "app/server.py"` - running it
                    from inside the app/ directory makes its own argv

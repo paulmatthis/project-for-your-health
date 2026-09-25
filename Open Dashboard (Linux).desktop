@@ -1,0 +1,24 @@
+[Desktop Entry]
+Type=Application
+Name=Open Dashboard
+Comment=Opens the calorie/macro/spending tracker dashboard
+Exec=bash -c 'cd "REPLACE_WITH_YOUR_CLONE_PATH" && ./app/open_dashboard.sh'
+Terminal=true
+Icon=utilities-terminal
+Categories=Utility;
+
+# UNTESTED: written without a Linux machine available to verify against.
+#
+# EDIT BEFORE FIRST USE: replace REPLACE_WITH_YOUR_CLONE_PATH above with
+# the absolute path to wherever you cloned this repo (e.g.
+# /home/you/project-for-your-health). A .desktop file can't reliably
+# discover its own location across desktop environments the way a
+# macOS .command file can, so this has to be set by hand once.
+#
+# After editing, you likely also need to mark this file executable
+# (chmod +x) and, in GNOME/Nautilus specifically, right-click it and
+# choose "Allow Launching" the first time - most file managers refuse to
+# run a .desktop file from an untrusted location otherwise. If double-
+# click launching doesn't work on your desktop environment, the reliable
+# fallback is just running ./app/open_dashboard.sh directly from a
+# terminal.
