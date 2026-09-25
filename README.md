@@ -10,7 +10,7 @@ A calorie/macro/spending tracker where you're allowed to be kinda sloppy and cas
 
 DO NOT log real data into this repo. Treat this template as read-only source material.
 
-**DO NOT click GitHub's "Fork" button.** A fork of a public repo is public by default, and GitHub doesn't offer a free way to make a private fork. Use the clone-and-repoint steps below instead. This produces a completely separate, private repo with no relation to this one so that your private information never accidentally ends up in a public space.
+**DO NOT click GitHub's "Fork" button.** A fork of a public repo is public by default, and GitHub doesn't offer a free way to make a private fork - confirmed directly against GitHub's own API, which refuses to change that setting on anything but an org-owned private repo. Use the green **"Use this template"** button instead (a different button, further along the same row) or the equivalent steps below. Unlike a fork, it creates a completely separate repo with no shared git history and no relation to this one, and lets you choose Private right when you create it.
 
 ## Structure and onboarding
 
@@ -26,6 +26,22 @@ DO NOT log real data into this repo. Treat this template as read-only source mat
 
 
 ### Exact steps to get your own private copy
+
+**Recommended: the GitHub CLI, one command.** This is GitHub's own "generate from template" feature, not a fork - it gives you a fresh repo with a single initial commit, no shared history, and no relation to this one:
+```
+gh repo create my-tracker --private --template paulmatthis/project-for-your-health --clone
+cd my-tracker
+```
+Skip to step 4 (verify) below.
+
+**Or, the same thing from the GitHub web UI:** on this repo's page, click the green **"Use this template"** button (not "Fork," a separate button further along the same row), then **"Create a new repository."** Choose an owner, a name, and confirm the visibility is set to **Private** right there on that page, before clicking Create. Then clone it:
+```
+git clone <the-URL-github-gives-you> my-tracker
+cd my-tracker
+```
+Skip to step 4.
+
+**Or, without GitHub's template feature** (any git host, not just GitHub):
 
 1. Clone this template:
    ```
@@ -50,6 +66,7 @@ DO NOT log real data into this repo. Treat this template as read-only source mat
      git remote add origin <the-URL-github-gives-you>
      git push -u origin main
      ```
+
 4. **Verify it's actually private. Don't just trust the toggle you clicked.**
    ```
    gh repo view --json isPrivate
