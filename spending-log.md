@@ -1,0 +1,4 @@
+Spending log, mainly built from receipts and bank/card statement photos or exports sent in chat. Categories: Groceries, Alcohol/Beer, Eating Out, Other. Whoever is processing a statement or receipt should categorize each line item and append rows below, keeping history rather than overwriting it. Archive receipt/statement images per CLAUDE.md (images/ for receipts, statements/ for bank/card statements). Grocery receipts also get itemized separately in grocery-purchases.md - log the lump sum here, the line items there. Deposits/income are out of scope for this doc, only spending goes here. Never guess the specific drink or dish from a vendor name, see CLAUDE.md's NEVER GUESS FROM A VENDOR NAME section for how a confirmed standing habit at a specific vendor can become an exception to that rule.
+
+| Date | Vendor | Category | Amount | Notes |
+|---|---|---|---|---|

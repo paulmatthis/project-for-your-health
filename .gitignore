@@ -1,0 +1,16 @@
+.DS_Store
+
+# Downloaded Vale style package, not the custom Local rules.
+# Reproduce with `vale sync` after cloning.
+.vale/styles/Google
+
+# Raw statement/receipt originals stay local only. The extracted text in
+# statements/ is the committed record; the original document adds exposure
+# with no benefit once its lines are in spending-log.md.
+statements/*.pdf
+
+# Runtime output from app/server.py, not source - churns constantly while
+# the on-demand dashboard server runs, nothing worth tracking in git.
+app/server.log
+app/server.error.log
+app/__pycache__/

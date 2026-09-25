@@ -1,0 +1,6 @@
+extends: existence
+message: "No em dashes or en dashes, anywhere, ever. See CLAUDE.md's TONE section. Use a period, a comma, or restructure the sentence."
+level: error
+nonword: true
+tokens:
+  - '[—–]'

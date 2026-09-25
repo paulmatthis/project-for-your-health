@@ -1,0 +1,17 @@
+# Two devices (Mac Mini + cloud/mobile) can both append a log entry around
+# the same time. For these append-only logs, git's union driver combines
+# both sides' new lines instead of raising a merge conflict. Do NOT add
+# profile-and-targets.md here: it's edited in place, not appended to, so a
+# real conflicting edit there should still stop and ask rather than being
+# silently unioned.
+food-log.md merge=union
+spending-log.md merge=union
+grocery-purchases.md merge=union
+exercise-log.md merge=union
+
+# Binary files: never text-diff or text-merge these.
+*.xlsx binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.pdf binary
