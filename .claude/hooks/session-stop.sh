@@ -133,6 +133,42 @@ check_entry_format() {
 
 check_entry_format
 
+# --- Primary-device workbook auto-resync ------------------------------------
+# Keeps the workbook from silently drifting behind the .md logs, without
+# depending on a session remembering to run app/recompute.py itself
+# (CLAUDE.md's PROCESSING AN ENTRY step 12) - the same reason the rest of
+# this hooks setup exists: a long or drifting conversation is not a
+# reliable place to park a "don't forget to..." rule. Runs unconditionally
+# here, gated only on primary-device status and on whether Food Log or
+# Spending Log's source .md actually changed this turn, --no-commit so it
+# folds into this hook's own commit below rather than racing it with a
+# second one.
+check_workbook_resync() {
+  local profile="$CLAUDE_PROJECT_DIR/profile-and-targets.md"
+  [ -f "$profile" ] || return 0
+  [ -f "$CLAUDE_PROJECT_DIR/app/recompute.py" ] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+
+  local sig_line sig_value sig_platform sig_path current_platform
+  sig_line=$(grep -m1 '^PRIMARY_DEVICE_SIGNATURE:' "$profile" 2>/dev/null)
+  [ -n "$sig_line" ] || return 0
+  sig_value=${sig_line#PRIMARY_DEVICE_SIGNATURE:}
+  sig_value=${sig_value# }
+  sig_platform=${sig_value%%|*}
+  sig_path=${sig_value#*|}
+  current_platform=$(uname -s | tr '[:upper:]' '[:lower:]')
+  [ "$sig_platform" = "$current_platform" ] && [ "$sig_path" = "$CLAUDE_PROJECT_DIR" ] || return 0
+
+  local changed
+  changed=$(git status --porcelain -- food-log.md spending-log.md 2>/dev/null)
+  [ -n "$changed" ] || return 0
+
+  echo "$PROJECT_NAME: food-log.md or spending-log.md changed this turn on the primary device - resyncing $WORKBOOK automatically." >&2
+  python3 "$CLAUDE_PROJECT_DIR/app/recompute.py" --no-commit >&2
+}
+
+check_workbook_resync
+
 # --- Vale style gate --------------------------------------------------------
 # Blocks the commit (by not making it) on a real Vale error, e.g. the
 # Local.NoEmDash rule. Fails open (skips the check, doesn't block) if

@@ -399,6 +399,15 @@ the companion workbook this session. Log to the four .md files only.
 This is about which device writes it, not whether the file is reachable -
 on the primary device the file is right there.
 
+This also runs automatically, not just manually: the Stop hook
+(.claude/hooks/session-stop.sh) resyncs Food Log and Spending Log the
+same way after every turn where either .md file changed, on the primary
+device, whether or not this got run by hand below. That's the real
+backstop, not this section - it doesn't depend on a session remembering
+to do it. Still worth doing explicitly as the first thing in a
+primary-device session (the catch-up pass below), so the workbook is
+current before any new entry gets processed, not just after.
+
 Catch-up pass, at the start of a primary-device session, before
 processing anything new:
 - Food Log and Spending Log tabs: run `python3 app/recompute.py` from

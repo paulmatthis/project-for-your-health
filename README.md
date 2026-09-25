@@ -48,7 +48,7 @@ DO NOT log real data into this repo. This is a template.
 
 4. **Open this folder as a project in Claude Code to begin the onboarding process.** 
 
-### Not using GitHub
+### Not using GitHub?
 
 If your git host isn't GitHub, or you'd rather not use the template feature, do the same thing by hand:
 
@@ -108,7 +108,19 @@ Turning a feature off moves its files to `archive/`. Turning it back on later ju
 
 ## Updating from mobile or other machines
 
-A hook pulls the latest logs at the start of every session, and another commits and pushes anything new if you tell Claude Code to end the session, retrying automatically if two devices sync at the same moment. Two devices logging around the same time get their entries combined automatically in the text logs to avoid a merge conflict. The workbook is a binary `.xlsx` file, so it can't merge the same way, see below for how that's handled instead.
+A hook pulls the latest logs at the start of every session, and another commits and pushes anything new after every response, not just when you end the conversation, retrying automatically if two devices sync at the same moment. Two devices logging around the same time get their entries combined automatically in the text logs to avoid a merge conflict. The workbook is a binary `.xlsx` file, so it can't merge the same way, see below for how that's handled instead. See "A Typical Day" below for exactly what syncs, when.
+
+## A Typical Day
+
+What actually syncs, when, without you having to think about it:
+
+1. You send something (text, photo, whatever) to a Claude Code session, on any device. That session pulls the latest data before reading anything, logs your entry to the right .md file or files, then commits and pushes automatically once it finishes responding. Not when you "end" the session or close the app - after every single response. You never need to explicitly close a conversation for this to happen.
+2. If that session is running on your primary device (see PRIMARY DEVICE in CLAUDE.md, the one your workbook lives on), the same after-every-response step also resyncs the workbook: if food-log.md or spending-log.md changed, it rewrites the matching tab and recalculates, automatically, before that response's commit goes out. Nothing has to remember to ask for it.
+3. If that session is running anywhere else (phone, cloud, a laptop that isn't your primary device), it only ever touches the .md files, never the workbook. Your primary device catches those entries up the next time it's used (step 1 pulls them, then step 2 resyncs the workbook from them).
+4. Opening the on-demand dashboard does its own pull-and-resync first, every time, before showing you anything - so what you see is never more than a few seconds stale, even if you haven't had a Claude Code session open in a while.
+5. The one thing that stays manual: the Grocery Purchases tab. Its protein/calorie columns don't exist anywhere in grocery-purchases.md - only Claude's own judgment produces them - so no script can safely fill them in without risking overwriting a real estimate with a guess. A primary-device session backfills this tab by hand, same as before.
+
+None of this depends on a session "remembering" to follow the rules, and it doesn't matter how long a session runs or how many turns it takes. The commit-and-push, and on the primary device the workbook resync, are enforced by a hook after every response - not by anyone (human or Claude) keeping track.
 
 ## The on-demand dashboard
 
