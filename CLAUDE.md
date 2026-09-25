@@ -153,13 +153,15 @@ Then:
    targets, and the primary device signature (see PRIMARY DEVICE below).
    Also fill in the same inputs into the renamed workbook (Profile &
    Targets tab, blue/yellow cells). The calculated targets are formulas
-   there and update themselves. Also set the Daily Summary and Weekly
-   Rollup tabs' anchor date: cell A5 on the Daily Summary tab to today's
-   date (run `python3 app/effective_date.py` for it, don't compute it by
-   hand - see PROCESSING AN ENTRY below for why), and cell A5 on the
-   Weekly Rollup tab to the Monday on or before that date (both tabs'
-   remaining pre-built rows are already formula-driven off that one
-   anchor cell each, see each tab's own layout before editing).
+   there and update themselves. Also set the Daily Summary, Weekly
+   Rollup, and Monthly Rollup tabs' anchor date: cell A5 on the Daily
+   Summary tab to today's date (run `python3 app/effective_date.py` for
+   it, don't compute it by hand - see PROCESSING AN ENTRY below for
+   why), cell A5 on the Weekly Rollup tab to the Monday on or before
+   that date, and cell A5 on the Monthly Rollup tab to the first of
+   that same month (all three tabs' remaining pre-built rows are
+   already formula-driven off that one anchor cell each, see each
+   tab's own layout before editing).
 4. Set the preceding FEATURES list based on their answers. For anything they
    declined, move the files to archive/ per the instructions in
    FEATURES. Don't delete anything.
@@ -356,12 +358,13 @@ FILES
                    file mirrors them in structured form (Food Log,
                    Spending Log, Grocery Purchases, Profile & Targets
                    tabs) plus formula-driven analysis tabs: Daily Summary
-                   vs targets, Weekly Rollup, and Cost per Macro. See its
-                   README tab for the color key and formula-range
-                   details. Daily Summary and Weekly Rollup formulas are
-                   pre-built well ahead of the current date, so normally
-                   you only add a date, not new formulas - only extend
-                   the formula range if you actually run past it. Gets
+                   vs targets, Weekly Rollup, Monthly Rollup, and Cost per
+                   Macro. See its README tab for the color key and
+                   formula-range details. Daily Summary, Weekly Rollup,
+                   and Monthly Rollup formulas are pre-built well ahead
+                   of the current date, so normally you only add a date,
+                   not new formulas - only extend the formula range if
+                   you actually run past it. Gets
                    renamed during onboarding (step 1 above) to match
                    your project's own name.
                    Always on, not in FEATURES, not something that goes to

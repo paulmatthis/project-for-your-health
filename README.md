@@ -11,7 +11,7 @@ DO NOT log real data into this repo. This is a template.
 ## Requirements
 
 - **Python 3.9+**, with `pip install -r requirements.txt` run once after cloning. Installs `openpyxl` to read and write the workbook.
-- **LibreOffice**. Needed for the workbook's formulas. `openpyxl` Without this, `app/recompute.py` still updates the raw data but skips recalculation.
+- **LibreOffice**. Needed for the workbook's formulas via `openpyxl`. Without this, `app/recompute.py` still updates the raw data but skips recalculation.
 - **A Chromium-based browser**: Google Chrome, Brave, Microsoft Edge, or Chromium to open Dashboard. Launcher scripts try each in that order. 
 - **GitHub CLI (`gh`)**
 
