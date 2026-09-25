@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-Parses food-log.md's structured table rows (never the prose "Day total"
-notes, which can go stale) and makes the workbook's Food Log tab an exact
-mirror of them. Daily Summary and Weekly Rollup are formula-driven off the
-Food Log tab already, so once it's synced they recompute themselves - no
-hand-written total, no arithmetic done by a person or an LLM.
+Parses food-log.md's and spending-log.md's structured table rows (never
+a hand-written summary, which can go stale) and makes the workbook's
+Food Log and Spending Log tabs an exact mirror of them. Daily Summary,
+Weekly Rollup, and Monthly Rollup are formula-driven off those tabs
+already, so once they're synced everything downstream recomputes itself
+- no hand-written total, no arithmetic done by a person or an LLM.
+Grocery Purchases is not covered here (it has protein/calorie columns
+Claude estimates by hand, not present in grocery-purchases.md, so a
+blind wipe-and-rewrite would destroy them) - still synced manually, see
+CLAUDE.md's PRIMARY DEVICE section.
 
 Usage: python3 app/recompute.py [--dry-run] [--no-commit]
 """
@@ -21,6 +26,8 @@ import openpyxl
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FOOD_LOG = PROJECT_ROOT / "food-log.md"
 SHEET_NAME = "Food Log"
+SPENDING_LOG = PROJECT_ROOT / "spending-log.md"
+SPENDING_SHEET_NAME = "Spending Log"
 
 
 def _find_workbook() -> Path:
@@ -126,6 +133,90 @@ def sync_workbook(rows, dry_run=False):
 
     wb.save(WORKBOOK)
     print(f"Synced {len(rows)} rows into '{SHEET_NAME}' (rows 2-{len(rows)+1}).")
+    return True
+
+
+SPENDING_ROW_RE = re.compile(
+    r"^\|\s*(\d{4}-\d{2}-\d{2})\s*\|(.*)\|\s*(Groceries|Alcohol/Beer|Eating Out|Other)\s*\|"
+    r"\s*\$?(-?[\d,]+\.\d{2})\s*\|(.*)\|\s*$"
+)
+
+
+def parse_spending_log(path: Path):
+    """Same idea as parse_food_log: only the structured table rows count,
+    never the prose "Source:" notes above them. Anchored on the Category
+    column (one of the four fixed values) and the Amount column's $X.XX
+    shape, same way food-log.md's row regex anchors on Calories/Confidence,
+    so a comma or parenthetical in the Vendor or Notes text doesn't throw
+    off which column is which."""
+    if not path.exists():
+        return [], []
+    rows = []
+    skipped = []
+    for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+        if not line.startswith("|"):
+            continue
+        if line.startswith("| Date ") or line.startswith("|---"):
+            continue
+        m = SPENDING_ROW_RE.match(line)
+        if not m:
+            skipped.append((lineno, line))
+            continue
+        date, vendor, category, amount, notes = m.groups()
+        rows.append(
+            {
+                "date": date,
+                "vendor": vendor.strip(),
+                "category": category.strip(),
+                "amount": float(amount.replace(",", "")),
+                "notes": notes.strip(),
+                "line": lineno,
+            }
+        )
+    return rows, skipped
+
+
+def sync_spending_workbook(rows, dry_run=False):
+    """Mirrors sync_workbook() for the Spending Log tab. Unlike Grocery
+    Purchases, every column here (Date, Vendor, Category, Amount, Notes)
+    comes straight from spending-log.md with nothing added by hand in
+    the workbook, so a full wipe-and-rewrite is safe - there's no
+    Claude-estimated column here to lose the way Grocery Purchases has
+    with its protein/calorie estimates (still manual, see CLAUDE.md)."""
+    if not SPENDING_LOG.exists():
+        return False
+
+    wb = openpyxl.load_workbook(WORKBOOK, data_only=False)
+    ws = wb[SPENDING_SHEET_NAME]
+
+    template_fonts = {c: copy.copy(ws.cell(row=2, column=c).font) for c in range(1, 6)}
+    template_formats = {c: ws.cell(row=2, column=c).number_format for c in range(1, 6)}
+
+    last_row = ws.max_row
+    for r in range(2, last_row + 1):
+        for c in range(1, 6):
+            ws.cell(row=r, column=c).value = None
+
+    for i, row in enumerate(rows, start=2):
+        values = [row["date"], row["vendor"], row["category"], row["amount"], row["notes"]]
+        for c, v in enumerate(values, start=1):
+            cell = ws.cell(row=i, column=c)
+            if c == 1:
+                import datetime as _dt
+
+                y, mo, d = (int(x) for x in v.split("-"))
+                cell.value = _dt.datetime(y, mo, d)
+            else:
+                cell.value = v
+            cell.font = template_fonts[c]
+            cell.number_format = template_formats[c]
+
+    if dry_run:
+        print(f"[dry-run] would write {len(rows)} rows to '{SPENDING_SHEET_NAME}' (rows 2-{len(rows)+1})")
+        return False
+
+    wb.save(WORKBOOK)
+    print(f"Synced {len(rows)} rows into '{SPENDING_SHEET_NAME}' (rows 2-{len(rows)+1}).")
     return True
 
 
@@ -347,14 +438,26 @@ def main():
     print_summary(rows)
     changed = sync_workbook(rows, dry_run=args.dry_run)
     dates_changed = sync_daily_summary_dates(rows, dry_run=args.dry_run)
+
+    spending_rows, spending_skipped = parse_spending_log(SPENDING_LOG)
+    if spending_skipped:
+        print(f"WARNING: {len(spending_skipped)} spending-log.md table-looking line(s) failed to parse:", file=sys.stderr)
+        for lineno, line in spending_skipped:
+            print(f"  line {lineno}: {line}", file=sys.stderr)
+    spending_changed = sync_spending_workbook(spending_rows, dry_run=args.dry_run)
+
     if args.dry_run:
         return
-    if changed or dates_changed:
+    if changed or dates_changed or spending_changed:
         recalc()
         if not args.no_commit:
-            git_commit_and_push(
-                f"auto: sync Food Log tab from food-log.md ({len(rows)} rows)"
-            )
+            parts = []
+            if changed:
+                parts.append(f"Food Log ({len(rows)} rows)")
+            if spending_changed:
+                parts.append(f"Spending Log ({len(spending_rows)} rows)")
+            summary = ", ".join(parts) if parts else "Daily Summary dates"
+            git_commit_and_push(f"auto: sync {summary} from .md source")
 
 
 if __name__ == "__main__":

@@ -401,17 +401,20 @@ on the primary device the file is right there.
 
 Catch-up pass, at the start of a primary-device session, before
 processing anything new:
-- Food Log tab: run `python3 app/recompute.py` from the project root. It
-  parses food-log.md's table rows directly (never a hand-written "Day
-  total" note, which can go stale) and rewrites the Food Log tab to
-  match exactly, then recalculates and commits. Don't hand-edit the Food
-  Log tab or Daily Summary/Weekly Rollup values yourself; the script and
-  its formulas are the only source for those.
-- Spending Log and Grocery Purchases tabs: not yet covered by a script.
-  Still check them against the corresponding .md files for any row
-  logged elsewhere since the last primary-device session, and backfill
-  by hand (blue text for hardcoded data, matching existing rows), same
-  as before.
+- Food Log and Spending Log tabs: run `python3 app/recompute.py` from
+  the project root. It parses food-log.md's and spending-log.md's table
+  rows directly (never a hand-written summary, which can go stale) and
+  rewrites both tabs to match exactly, then recalculates and commits.
+  Don't hand-edit either tab, or Daily Summary/Weekly Rollup/Monthly
+  Rollup values yourself; the script and its formulas are the only
+  source for those.
+- Grocery Purchases tab: not covered by a script, and won't be the same
+  way - its Est. Protein/Est. Calories columns are Claude's own
+  estimates, not present in grocery-purchases.md, so a blind
+  wipe-and-rewrite would destroy them. Still check it against
+  grocery-purchases.md for any row logged elsewhere since the last
+  primary-device session, and backfill by hand (blue text for
+  hardcoded data, matching existing rows), same as before.
 
 PROCESSING AN ENTRY
 Day boundary: a new day starts at 5am America/New_York by default, not
@@ -455,13 +458,14 @@ a chat session and the dashboard never disagree about what day it is.
     a summary block and keep recent weeks in full detail.
 12. If this is a primary-device session (see the PRIMARY DEVICE section,
     whose catch-up pass at session start should already have run): for a
-    food-log.md entry, run `python3 app/recompute.py` after appending the
-    row - it rewrites the Food Log tab from food-log.md and recomputes
-    Daily Summary/Weekly Rollup itself, so there's nothing to hand-edit.
-    For a spending-log.md or grocery-purchases.md entry, add the row into
-    the companion workbook by hand as before (blue text, matching existing
-    rows) - those tabs aren't scripted yet. Either way, don't wait to be
-    asked to "update the spreadsheet."
+    food-log.md or spending-log.md entry, run `python3 app/recompute.py`
+    after appending the row - it rewrites the Food Log and Spending Log
+    tabs from their .md sources and recomputes Daily Summary/Weekly
+    Rollup/Monthly Rollup itself, so there's nothing to hand-edit. For a
+    grocery-purchases.md entry, add the row into the companion workbook
+    by hand as before (blue text, matching existing rows) - that tab
+    isn't scripted, see PRIMARY DEVICE above for why. Either way, don't
+    wait to be asked to "update the spreadsheet."
 13. Reply with a short status: running total for the day against calorie
     and protein targets. Nothing longer unless asked.
 
