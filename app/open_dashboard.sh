@@ -32,9 +32,14 @@ if ! lsof -ti:8420 > /dev/null 2>&1; then
   sleep 0.5
 fi
 
-# Portable mktemp form (GNU and BSD mktemp interpret a bare -t prefix
-# differently) so this works unchanged on Linux too.
-PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dashboard-chrome.XXXXXXXX")"
+# Persistent, not temporary: a fresh profile every launch meant Chrome's
+# default-browser and analytics prompts reset every time too, since
+# there was never a profile around long enough to remember you'd
+# answered them (2026-09-26). Kept under the project root, gitignored,
+# so it survives across launches but stays out of git and isolated from
+# your regular Chrome profile.
+PROFILE_DIR="$(pwd)/.dashboard-chrome-profile"
+mkdir -p "$PROFILE_DIR"
 
 UNAME=$(uname -s)
 if [ "$UNAME" = "Darwin" ]; then
@@ -56,7 +61,9 @@ if [ "$UNAME" = "Darwin" ]; then
   fi
   open -n -a "$BROWSER_APP" --args \
     --app="http://localhost:8420/" \
-    --user-data-dir="$PROFILE_DIR"
+    --user-data-dir="$PROFILE_DIR" \
+    --no-first-run \
+    --no-default-browser-check
 else
   # Linux: there's no `open` equivalent, so invoke a Chrome/Chromium
   # binary directly. Tries the common names in order; edit this list if
@@ -72,7 +79,8 @@ else
     echo "Could not find a Chromium-based browser on PATH (tried google-chrome, google-chrome-stable, chromium, chromium-browser, brave-browser, microsoft-edge, microsoft-edge-stable). Install one of these, or edit the candidate list in app/open_dashboard.sh." >&2
     exit 1
   fi
-  "$CHROME_BIN" --app="http://localhost:8420/" --user-data-dir="$PROFILE_DIR" &
+  "$CHROME_BIN" --app="http://localhost:8420/" --user-data-dir="$PROFILE_DIR" \
+    --no-first-run --no-default-browser-check &
 fi
 
 # Wait for this specific (isolated-profile) Chrome window to close before
@@ -81,14 +89,14 @@ sleep 1
 while pgrep -f -- "--user-data-dir=$PROFILE_DIR" > /dev/null 2>&1; do
   sleep 1
 done
-rm -rf "$PROFILE_DIR"
 
 if [ "$STARTED_SERVER" = "1" ]; then
   kill "$SERVER_PID" 2>/dev/null || true
 fi
 
-# Close this window itself, last, so nothing is left over from this run -
-# not the server, not the Chrome profile, not the Terminal window either.
+# Close this window itself, last, so nothing is left running from this
+# run - not the server, not the Terminal window either (the Chrome
+# profile is meant to persist, see above).
 # Backgrounded and detached so the script can exit first (an idle,
 # already-exited shell closes without Terminal's "still running" prompt);
 # scoped to this window's own tty so it never touches any other Terminal

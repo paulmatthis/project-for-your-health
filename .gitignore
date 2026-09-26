@@ -14,3 +14,9 @@ statements/*.pdf
 app/server.log
 app/server.error.log
 app/__pycache__/
+
+# Persistent Chrome profile for the on-demand dashboard window (see
+# app/open_dashboard.sh / open_dashboard.ps1). Kept across launches so
+# browser-level settings (default-browser prompt, analytics) actually
+# stick, but it's a local Chrome profile, not project data.
+.dashboard-chrome-profile/

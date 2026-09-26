@@ -44,8 +44,12 @@ if (-not $portInUse) {
     Start-Sleep -Milliseconds 500
 }
 
-$profileDir = Join-Path $env:TEMP ("dashboard-chrome-" + [System.Guid]::NewGuid().ToString())
-New-Item -ItemType Directory -Path $profileDir | Out-Null
+# Persistent, not temporary: a fresh profile every launch meant Chrome's
+# default-browser and analytics prompts reset every time too, since
+# there was never a profile around long enough to remember you'd
+# answered them (2026-09-26). Kept under the project root, gitignored.
+$profileDir = Join-Path $PSScriptRoot "..\.dashboard-chrome-profile"
+New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
 
 # Any Chromium-based browser understands --app and --user-data-dir, not
 # just Chrome. Common install locations for each, in order - edit this
@@ -63,7 +67,6 @@ $chromeCandidates = @(
 )
 $chrome = $chromeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $chrome) {
-    Remove-Item -Recurse -Force $profileDir -ErrorAction SilentlyContinue
     if ($startedServer -and $serverProcess) {
         Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
     }
@@ -71,13 +74,11 @@ if (-not $chrome) {
     exit 1
 }
 
-$chromeProcess = Start-Process -FilePath $chrome -ArgumentList "--app=http://localhost:$port/", "--user-data-dir=$profileDir" -PassThru
+$chromeProcess = Start-Process -FilePath $chrome -ArgumentList "--app=http://localhost:$port/", "--user-data-dir=$profileDir", "--no-first-run", "--no-default-browser-check" -PassThru
 
 # Wait for this specific (isolated-profile) Chrome window to close before
 # tearing anything down - other Chrome windows/profiles are untouched.
 $chromeProcess.WaitForExit()
-
-Remove-Item -Recurse -Force $profileDir -ErrorAction SilentlyContinue
 
 if ($startedServer -and $serverProcess) {
     Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
