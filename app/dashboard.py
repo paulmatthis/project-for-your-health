@@ -118,9 +118,9 @@ def food_log_rows_for(date: datetime.date):
 
 def macro_panels(summary, theme):
     protein, carbs, fat = summary["protein"], summary["carbs"], summary["fat"]
-    net_kcal = protein * 4 + carbs * 4 + fat * 9
+    macro_kcal = protein * 4 + carbs * 4 + fat * 9
     gross_kcal = summary["calories"]
-    other = max(0, gross_kcal - net_kcal)
+    other = max(0, gross_kcal - macro_kcal)
     colors = theme["slice_colors"]
 
     calorie_share = donut_panel_html(
@@ -131,8 +131,8 @@ def macro_panels(summary, theme):
             {"name": "Carbs (net)", "value": carbs * 4, "display": f"{carbs} g", "color": colors[1]},
             {"name": "Fat", "value": fat * 9, "display": f"{fat} g", "color": colors[2]},
         ],
-        f"{net_kcal:,}",
-        "net kcal",
+        f"{macro_kcal:,}",
+        "macro kcal",
         "Fat runs 9 kcal/g vs. 4 for protein and carbs, so it leads on calories despite fewer grams.",
     )
 
