@@ -147,7 +147,7 @@ def macro_panels(summary, theme):
         ],
         f"{total_g:,} g",
         "macros",
-        "Same three macros as Calorie Share weighed instead of by energy.",
+        "Similar to Calorie Share, but measured by macro weight instead of energy.",
     )
 
     source_slices = [
